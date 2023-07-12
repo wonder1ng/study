@@ -22,26 +22,29 @@ class StartSQL:
     
     def select_table(self, table):
         self.table = table
+        self.cols = tuple([self.cur.execute(f'desc {self.table}'), pd.DataFrame(self.cur.fetchall())][1][0])
 
     def desc(self, table_name=None):
-        return self.cur.execute(f'desc {self.table}') if table_name==None else self.cur.execute(f'desc {table_name}')
+        return [self.cur.execute(f'desc {self.table}'), pd.DataFrame(self.cur.fetchall())][1] if table_name==None else [self.cur.execute(f'desc {table_name}'), pd.DataFrame(self.cur.fetchall())][1]
 
-    def insert(self, id:int, name:str, email:str, phone:str, major:str):
+    def insert(self, values:str, cols:str=None):
+        if cols==None: cols = self.cols
+        cols = ",".join(cols)
         try:
-            self.cur.execute(f'insert into {self.table} values({id}, \"{name}\", \"{email}\", \"{phone}\", \"{major}\")')
+            self.cur.execute(f'insert into {self.table} ({cols}) values({values})')
             self.connect.commit()
             return True
-        except: return False
-
-    def insert_many(self, command:list):
+        except Exception as e: print(e); return False
+    
+    def insert_many(self, values:list, cols:list=None):
+        if cols==None: cols = self.cols
+        cols = ",".join(cols)
         try:
-            for i in command:
-                self.cur.execute(f'insert into {self.table} values{tuple(i)}')
+            for i in values:
+                self.cur.execute(f'insert into {self.table} ({cols}) values({i})')
             self.connect.commit()
             return True
-        except Exception as e:
-            print(e)
-            return False
+        except Exception as e: print(e); return False
     
     def select(self, columns='*', rows=None, table=None):
         if table==None: table=self.table
